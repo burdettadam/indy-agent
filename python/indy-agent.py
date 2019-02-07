@@ -21,6 +21,7 @@ from modules.basicmessage import AdminBasicMessage, BasicMessage
 from post_message_handler import PostMessageHandler
 from websocket_message_handler import WebSocketMessageHandler
 from agent import Agent
+from agency import Agency
 from message import Message
 
 if __name__ == "__main__":
@@ -43,7 +44,9 @@ if __name__ == "__main__":
     aiohttp_jinja2.setup(WEBAPP, loader=jinja2.FileSystemLoader('view'))
 
     AGENT = Agent()
+    AGENCY = Agency()
     POST_MESSAGE_HANDLER = PostMessageHandler(AGENT.message_queue)
+    AGENCY_MESSAGE_HANDLER = PostMessageHandler(AGENCY.agency_queue)
     WEBSOCKET_MESSAGE_HANDLER = WebSocketMessageHandler(
         AGENT.message_queue,
         AGENT.outbound_admin_message_queue
@@ -54,6 +57,7 @@ if __name__ == "__main__":
         web.get('/ws', WEBSOCKET_MESSAGE_HANDLER.ws_handler),
         web.static('/res', 'view/res'),
         web.post('/indy', POST_MESSAGE_HANDLER.handle_message),
+        web.post('/agency/msg', AGENCY_MESSAGE_HANDLER.handle_message)
     ]
 
     WEBAPP['agent'] = AGENT
@@ -92,6 +96,7 @@ if __name__ == "__main__":
         print('===== Starting Server on: http://localhost:{} ====='.format(args.port))
         LOOP.create_task(SERVER.start())
         LOOP.create_task(AGENT.start())
+        LOOP.create_task(AGENCY.start())
         LOOP.run_forever()
     except KeyboardInterrupt:
         print("exiting")
